@@ -17,7 +17,9 @@ set(sources
     Scene.h
     Scene.cpp
     RenderCases.h
-  "Aabb.h")
+    Aabb.h 
+    DisplayWindow.h
+    DisplayWindow.cpp)
 
 #select debug or release 
 SET(HIPRT_DLL  $<IF:$<CONFIG:Debug>,${HIPRT_BINDIR}/hiprt0200364D.dll,${HIPRT_BINDIR}/hiprt0200364.dll>)

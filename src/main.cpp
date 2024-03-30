@@ -10,21 +10,7 @@
 #include "TriangleMesh.h"
 #include "assert.h"
 
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
-#include <stdio.h>
-#define GL_SILENCE_DEPRECATION
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#    include <GLES2/gl2.h>
-#endif
-#include <include/GLFW/glfw3.h> // Will drag system OpenGL headers
-
-static void glfw_error_callback(int error, const char* description)
-{
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
-}
-
+#include "DisplayWindow.h"
 
 
 void launchKernel(hipFunction_t func, int nx, int ny, void** args, hipStream_t stream = 0, size_t threadPerBlockX = 8, size_t threadPerBlockY = 8, size_t threadPerBlockZ = 1)
@@ -56,116 +42,6 @@ struct GeometryData
 
 int main(int argc, char const* argv[])
 {
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return 1;
-
-     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-    // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
-    if (window == nullptr)
-        return 1;
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
-
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void) io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-
-      // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-     // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-     while (!glfwWindowShouldClose(window))
-    {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        glfwPollEvents();
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*) &clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window",
-                         &show_another_window); // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
-
-        // Rendering
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
-    }
-
-      // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-
-
     std::cout << "Current working directory: " << fs::current_path() << "\n";
     HIP_ASSERT(hipInit(0) == hipSuccess, "hipInit");
 
@@ -195,7 +71,98 @@ int main(int argc, char const* argv[])
     hiprtContext rtContext{nullptr};
     HIP_ASSERT(hiprtCreateContext(hiprtApiVersion, input, rtContext) == hiprtSuccess, "hiprtCreateContext");
 
-    /*Render<CASE_TYPE::GEOMETRY_HIT_DISTANCE>(rtContext, stream, "../../scenes/sphere/s.obj", "../../scens/sphere/", "geometry_hit_distance.png");
+
+
+     std::vector<TriangleMesh> meshes;
+    if (ReadObjMesh("../../scenes/sphere/s.obj", "../../scens/sphere/", meshes) == false)
+    {
+        return false;
+    }
+
+    TriangleMesh& mesh = *meshes.begin();
+
+    mesh.Build();
+    auto geometryBuildInput = mesh.CreateBuildInput(GEOMETRY_TYPE::TRIANGLE_MESH);
+    hiprtGeometry geometry{};
+    // CreateGeometry(context, stream, hiprtBuildFlagBitPreferFastBuild, geometryBuildInput, geometry);
+
+    hiprtGeometryBuildInput geomInput;
+    geomInput.type = hiprtPrimitiveTypeTriangleMesh;
+    geomInput.primitive.triangleMesh = mesh.mesh;
+
+    size_t geomTempSize;
+    hiprtDevicePtr geomTemp;
+    hiprtBuildOptions options;
+    options.buildFlags = hiprtBuildFlagBitPreferFastBuild;
+    HIP_ASSERT(hiprtGetGeometryBuildTemporaryBufferSize(rtContext, geomInput, options, geomTempSize) == hiprtSuccess, "build geometry");
+    HIP_ASSERT(hipMalloc(&geomTemp, geomTempSize) == hipSuccess, "GeoTemp malloc");
+
+    // hiprtGeometry geometry;
+    HIP_ASSERT(hiprtSuccess == hiprtCreateGeometry(rtContext, geomInput, options, geometry), "Create geometry");
+    HIP_ASSERT(hiprtSuccess == hiprtBuildGeometry(rtContext, hiprtBuildOperationBuild, geomInput, options, geomTemp, 0, geometry));
+
+    Camera camera;
+    camera.m_translation = make_float3(0.0f, 0.f, 5.8f);
+    camera.m_rotation = make_float4(0.0f, 0.0f, 1.0f, 0.0f);
+    camera.m_fov = 45.0f * hiprt::Pi / 180.f;
+
+    constexpr unsigned int height = 540;
+    constexpr unsigned int width = 960;
+
+    constexpr int stackSize = 64;
+    constexpr int sharedStackSize = 16;
+    constexpr int blockWidth = 8;
+    constexpr int blockHeight = 8;
+    constexpr int blockSize = blockWidth * blockHeight;
+    float aoRadius = 1.4f;
+
+    hiprtDevicePtr outputImage;
+    HIP_ASSERT(hipMalloc(&outputImage, width * height * 4) == hipSuccess, "malloc");
+
+    int2 resolution{width, height};
+
+    hiprtGlobalStackBufferInput stackInput{hiprtStackTypeGlobal /*hiprtStackTypeDynamic*/, hiprtStackEntryTypeInteger, stackSize, height * width};
+
+    hiprtGlobalStackBuffer globalStackBuffer;
+    HIP_ASSERT(hiprtCreateGlobalStackBuffer(rtContext, stackInput, globalStackBuffer) == hiprtSuccess, "globalStack");
+
+    hipModule_t module{nullptr};
+    HIP_ASSERT(hipModuleLoad(&module, "trace.hipfb") == hipSuccess, "module load");
+    hipFunction_t kernel{nullptr};
+    HIP_ASSERT(hipModuleGetFunction(&kernel, module, "SimpleMeshIntersectionKernelCamera") == hipSuccess, "kernel load");
+
+    void* kernel_args[] = {&geometry, &outputImage, &resolution, &camera};
+
+    MainDisplayWindow MainWindow;      
+
+    while (!MainWindow.ShouldClose())
+    {
+        MainWindow.PollEvents();
+        MainWindow.Update();
+
+        launchKernel(kernel, width, height, kernel_args, stream, blockWidth, blockHeight);
+        //HIP_ASSERT(hipStreamSynchronize(stream) == hipSuccess, "stream sync");
+
+        MainWindow.Render();
+    }
+
+   
+
+    
+    
+    
+    writeImageFromDevice("test_image.png", width, height, outputImage);
+
+    HIP_ASSERT(hipModuleUnload(module) == hipSuccess, "module unload");
+
+    HIP_ASSERT(hipFree(outputImage) == hipSuccess, "free");
+    HIP_ASSERT(hiprtDestroyGlobalStackBuffer(rtContext, globalStackBuffer) == hiprtSuccess, "stack buffer");
+    HIP_ASSERT(hiprtDestroyGeometry(rtContext, geometry) == hiprtSuccess, "Destroy geometries");
+
+
+
+    /*
+    Render<CASE_TYPE::GEOMETRY_HIT_DISTANCE>(rtContext, stream, "../../scenes/sphere/s.obj", "../../scens/sphere/", "geometry_hit_distance.png");
     Render<CASE_TYPE::GEOMETRY_DEBUG>(rtContext, stream, "../../scenes/sphere/s.obj", "../../scens/sphere/", "geometry_hit_distance.png");
     Render<CASE_TYPE::GEOMETRY_DEBUG_WITH_CAMERA>(rtContext, stream, "../../scenes/sphere/s.obj", "../../scens/sphere/", "geometry_hit_distance.png");
 
