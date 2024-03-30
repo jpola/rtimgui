@@ -1,0 +1,48 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "Windows",
+            "displayName": "Visual Studio Community 2019 - amd64",
+            "description": "Using compilers for Visual Studio 16 2019 (x64 architecture)",
+            "generator": "Visual Studio 16 2019",
+            "toolset": "host=x64",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/",
+            "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install",
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe"
+            },
+            "environment": {
+                "HIP_PATH": "C:/rocm/5.7"
+            }
+        },
+        {
+            "name": "ConfigDebug",
+            "displayName": "Visual Studio Community 2019 - amd64 - Debug",
+            "inherits": "Windows"
+        },
+        {
+            "name": "ConfigRelease",
+            "displayName": "Visual Studio Community 2019 - amd64 - Release",
+            "inherits": "Windows"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "Windows-debug",
+            "displayName": "Visual Studio Community 2019 - amd64 - Debug",
+            "configurePreset": "ConfigDebug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Windows-release",
+            "displayName": "Visual Studio Community 2019 - amd64 - Release",
+            "configurePreset": "ConfigRelease",
+            "configuration": "Release"
+        }
+    ]
+}

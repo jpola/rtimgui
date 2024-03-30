@@ -1,0 +1,12 @@
+{
+  "cmakeExecutable": "C:\\Program Files\\CMake\\bin\\cmake.exe",
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64" ],
+      "cmakeExecutable": "C:/Program Files/CMake/bin/cmake.exe"
+    }
+  ]
+}
